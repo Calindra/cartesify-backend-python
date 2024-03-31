@@ -1,21 +1,34 @@
 import json
 import requests
+import logging
 from .appfactory import AppFactory
 from cartesi import Rollup, RollupData
+
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
+def dapp_inspect_decorator(func):
+    def wrapper(self, *args, **kwargs):
+        return self.dapp.inspect()
+    return wrapper
+
+def dapp_advance_decorator(func):
+    def wrapper(self, *args, **kwargs):
+        return self.dapp.advance()
+    return wrapper
 
 class CartesifyBackend:
 
     def __init__(self):
+        logger.info("Starting Cartesify App")
         self.dapp = AppFactory().create_dapp()
+    def get_app(self):
+        return self.dapp
 
-    def dapp_advance_decorator(self):
-        return self.dapp.advance()
-
-    def dapp_inspect_decorator(self):
-        return self.dapp.inspect()
-
-    @dapp_inspect_decorator()
+    @dapp_inspect_decorator
     def handle_inspect(self, rollup:Rollup, data: RollupData) -> bool:
+        logger.info("Cartesify handle inspect")
         try:
             payload = data.str_payload()
 
@@ -42,8 +55,10 @@ class CartesifyBackend:
             rollup.report(hex_payload)
             return False
 
-    @dapp_advance_decorator()
+    @dapp_advance_decorator
     def handle_advance(self, rollup:Rollup, data: RollupData) -> bool:
+        logger.info("Cartesify handle advance                                       ")
+
         try:
             payload = data.str_payload()
             if not payload.startswith('0x7b22'):

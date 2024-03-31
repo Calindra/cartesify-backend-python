@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: cartesify-backend
+Version: 0.0.10
+Summary: Cartesify Backend
+Author: Diego Guimaraes
+Author-email: diego.sena.guimaraes@gmail.com
+License: MIT License
+Keywords: cartesify
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Cartesify Backend
