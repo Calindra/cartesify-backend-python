@@ -34,8 +34,9 @@ class CartesifyBackend:
         return app
 
 
-    def handle_inspect(self, payload):
+    def handle_inspect(self, data, rollups_url):
         logger.info("Cartesify handle inspect")
+        payload = data['payload']
         try:
             if not payload.startswith('0x7b22'):
                 return "reject"
@@ -45,10 +46,37 @@ class CartesifyBackend:
             utf8_string = byte_buffer.decode('utf-8')
             json_data = json.loads(utf8_string)
 
-            if 'cartesify' in json_data:
-                cartesify_data = json_data['cartesify']
+            print(f"json_data {json_data}")
 
-                resp = requests.request(cartesify_data)
+            if 'cartesify' in json_data:
+                url = json_data['cartesify']['fetch']['url']
+
+                print(f"url is {url}")
+                response = requests.get(url)
+
+                print(f"response is {response.json()}")
+
+                response_data = {
+                    "success": {
+                        "data": response.json(),
+                        "headers": dict(response.headers),
+                        "status": response.status_code
+                    }
+                }
+
+                # Converte o dicionário em uma string JSON
+                jsonString = json.dumps(response_data)
+
+                # Converte a string JSON para bytes usando UTF-8
+                json_bytes = jsonString.encode('utf-8')
+
+                # Converte os bytes para uma representação hexadecimal
+                hex_payload = '0x' + json_bytes.hex()
+
+                print("Calling report")
+
+                requests.post(f"{rollups_url}/report", json={"body": hex_payload}, headers={"Content-Type": "application/json"})
+
 
                 return "accept"
             return "reject"
@@ -63,7 +91,7 @@ class CartesifyBackend:
             # rollup.report(hex_payload)
             return "reject"
 
-    def handle_advance(self, data):
+    def handle_advance(self, data, rollups_url):
         logger.info("Cartesify handle advance")
         payload = data['payload']
         try:
@@ -83,23 +111,27 @@ class CartesifyBackend:
 
                 logger.info(f'Cartesify Data {cartesify_data}')
 
-                resp = requests.request(url=cartesify_data['url'], method=cartesify_data['method'], headers=cartesify_data['headers'], json=cartesify_data['body'])
+                response = requests.request(url=cartesify_data['url'], method=cartesify_data['method'], headers=cartesify_data['headers'], json=cartesify_data['body'])
 
-                json_string = json.dumps({
-                    'success': {
-                        'data': resp.json(),
-                        'headers': dict(resp.headers),
-                        'status': resp.status_code
+                response_data = {
+                    "success": {
+                        "data": response.json(),
+                        "headers": dict(response.headers),
+                        "status": response.status_code
                     }
-                })
+                }
 
-                # Converta para bytes
-                byte_buffer = json_string.encode("utf-8")
+                # Converte o dicionário em uma string JSON
+                jsonString = json.dumps(response_data)
 
-                # Converta para hexadecimal
-                hex_payload = "0x" + byte_buffer.hex()
+                # Converte a string JSON para bytes usando UTF-8
+                json_bytes = jsonString.encode('utf-8')
 
-                #rollup.report(hex_payload)
+                # Converte os bytes para uma representação hexadecimal
+                hex_payload = '0x' + json_bytes.hex()
+
+                requests.post(f"{rollups_url}/report", json={"body": hex_payload},
+                              headers={"Content-Type": "application/json"})
 
                 return "accept"
 
@@ -108,11 +140,13 @@ class CartesifyBackend:
         except Exception as e:
             print(e)
             print("Sending reject")
-            # error_message = e.args[0] if len(e.args) > 0 else "Unexpected Error"
-            # error_json = json.dumps({"error": {"message": error_message}})
-            # buffer = bytes(error_json, "utf8")
-            # hex_payload = "0x" + buffer.hex()
-            # rollup.report(hex_payload)
+            error_message = e.args[0] if len(e.args) > 0 else "Unexpected Error"
+            error_json = json.dumps({"error": {"message": error_message}})
+            buffer = bytes(error_json, "utf8")
+            hex_payload = "0x" + buffer.hex()
+            requests.post(f"{rollups_url}/report", json={"body": hex_payload},
+                          headers={"Content-Type": "application/json"})
+
             return "reject"
 
 

@@ -21,12 +21,12 @@ class App:
 
     async def handle_advance(self, data):
         print("handle_advance", data)
-        result = self.advance_handlers[0](data)
+        result = self.advance_handlers[0](data, self.options.url)
         return result
 
     async def handle_inspect(self, data):
         print("handle_inspect", data)
-        return self.inspect_handlers[0](data)
+        return self.inspect_handlers[0](data, self.options.url)
 
     def add_advance_handler(self, handler):
         self.advance_handlers.append(handler)
@@ -53,7 +53,7 @@ class App:
                         status = await self.handle_advance(data['data'])
                         break
 
-                    if data['request_type'] == 'advance_state':
+                    if data['request_type'] == 'inspect_state':
                         await self.handle_inspect(data['data'])
                         break
 
