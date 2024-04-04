@@ -4,7 +4,7 @@ with open('README.md', 'r') as arq:
     readme = arq.read()
 
 setup(name='cartesify_backend',
-    version='0.0.30',
+    version='0.0.38',
     license='MIT License',
     author='Diego Guimaraes',
     long_description=readme,

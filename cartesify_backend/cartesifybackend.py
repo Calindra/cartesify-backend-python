@@ -51,19 +51,18 @@ class CartesifyBackend:
             if 'cartesify' in json_data:
                 url = json_data['cartesify']['fetch']['url']
 
-                print(f"url is {url}")
                 response = requests.get(url)
 
-                print(f"response is {response.json()}")
+                json_data = response.json()
 
                 response_data = {
                     "success": {
-                        "data": response.json(),
-                        "headers": dict(response.headers),
+                        "text": json.dumps(json_data),
+                        "data": json_data,
+                        "headers": [[key, value] for key, value in response.headers.items()],
                         "status": response.status_code
                     }
                 }
-
                 # Converte o dicionário em uma string JSON
                 jsonString = json.dumps(response_data)
 
@@ -73,10 +72,7 @@ class CartesifyBackend:
                 # Converte os bytes para uma representação hexadecimal
                 hex_payload = '0x' + json_bytes.hex()
 
-                print("Calling report")
-
-                requests.post(f"{rollups_url}/report", json={"body": hex_payload}, headers={"Content-Type": "application/json"})
-
+                response_report = requests.post(f"{rollups_url}/report", json={"payload": hex_payload}, headers={"Content-Type": "application/json"})
 
                 return "accept"
             return "reject"

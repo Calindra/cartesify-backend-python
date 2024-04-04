@@ -51,11 +51,9 @@ class App:
 
                     if data['request_type'] == 'advance_state':
                         status = await self.handle_advance(data['data'])
-                        break
 
-                    if data['request_type'] == 'inspect_state':
+                    elif data['request_type'] == 'inspect_state':
                         await self.handle_inspect(data['data'])
-                        break
 
                 elif response.status_code == 202:
                     print("No rollup request available")
