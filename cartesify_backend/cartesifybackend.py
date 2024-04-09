@@ -2,6 +2,7 @@ import json
 import requests
 import logging
 from .appfactory import AppFactory
+import httpx
 
 logging.basicConfig(level=logging.INFO)
 
@@ -13,10 +14,14 @@ class CartesifyOptions:
         self.url = url
         self.broadcast_advance_requests = broadcast_advance_requests
 
+
     def __str__(self):
         return f'CartesifyOptions: url={self.url}, broadcast_advance_requests={self.broadcast_advance_requests}'
 
 class CartesifyBackend:
+
+    def __init__(self):
+        self.client = httpx.AsyncClient(timeout=10)
 
     def create_app(self, options: CartesifyOptions):
         factory = AppFactory()
@@ -34,7 +39,7 @@ class CartesifyBackend:
         return app
 
 
-    def handle_inspect(self, data, rollups_url):
+    async def handle_inspect(self, data, rollups_url):
         logger.info("Cartesify handle inspect")
         payload = data['payload']
         try:
@@ -51,43 +56,50 @@ class CartesifyBackend:
             if 'cartesify' in json_data:
                 url = json_data['cartesify']['fetch']['url']
 
-                response = requests.get(url)
+                try:
+                    response = await self.client.get(url)
 
-                json_data = response.json()
+                    json_data = response.json()
 
-                response_data = {
-                    "success": {
-                        "text": json.dumps(json_data),
-                        "data": json_data,
-                        "headers": [[key, value] for key, value in response.headers.items()],
-                        "status": response.status_code
+                    response_data = {
+                        "success": {
+                            "text": json.dumps(json_data),
+                            "data": json_data,
+                            "headers": [[key, value] for key, value in response.headers.items()],
+                            "status": response.status_code
+                        }
                     }
-                }
-                # Converte o dicionário em uma string JSON
-                jsonString = json.dumps(response_data)
+                    # Converte o dicionário em uma string JSON
+                    jsonString = json.dumps(response_data)
 
-                # Converte a string JSON para bytes usando UTF-8
-                json_bytes = jsonString.encode('utf-8')
+                    # Converte a string JSON para bytes usando UTF-8
+                    json_bytes = jsonString.encode('utf-8')
 
-                # Converte os bytes para uma representação hexadecimal
-                hex_payload = '0x' + json_bytes.hex()
+                    # Converte os bytes para uma representação hexadecimal
+                    hex_payload = '0x' + json_bytes.hex()
 
-                response_report = requests.post(f"{rollups_url}/report", json={"payload": hex_payload}, headers={"Content-Type": "application/json"})
+                    response_report = await self.client.post(f"{rollups_url}/report", json={"payload": hex_payload}, headers={"Content-Type": "application/json"})
 
-                return "accept"
+                    return "accept"
+                except Exception as e:
+                    logger.error("Excecao generica")
+                except httpx.HTTPStatusError as e:
+                    print(f'Erro ao iniciar cartesify {e}')
+
             return "reject"
 
         except Exception as e:
             print(e)
             print("Sending reject")
-            # error_message = e.args[0] if len(e.args) > 0 else "Unexpected Error"
-            # error_json = json.dumps({"error": {"message": error_message}})
-            # buffer = bytes(error_json, "utf8")
-            # hex_payload = "0x" + buffer.hex()
-            # rollup.report(hex_payload)
+            error_message = e.args[0] if len(e.args) > 0 else "Unexpected Error"
+            error_json = json.dumps({"error": {"message": error_message}})
+            buffer = bytes(error_json, "utf8")
+            hex_payload = "0x" + buffer.hex()
+            await self.client.post(f"{rollups_url}/report", json={"payload": hex_payload},
+                                   headers={"Content-Type": "application/json"})
             return "reject"
 
-    def handle_advance(self, data, rollups_url):
+    async def handle_advance(self, data, rollups_url):
         logger.info("Cartesify handle advance")
         payload = data['payload']
         try:
@@ -107,26 +119,33 @@ class CartesifyBackend:
 
                 logger.info(f'Cartesify Data {cartesify_data}')
 
-                response = requests.request(url=cartesify_data['url'], method=cartesify_data['method'], headers=cartesify_data['headers'], json=cartesify_data['body'])
+                method = cartesify_data['fetch']['options']['method']
+
+                request = httpx.Request(method=method, url=cartesify_data['fetch']['url'], headers=cartesify_data['fetch']['options']['headers'], json=cartesify_data['fetch']['options']['body'])
+
+                response = await self.client.send(request)
+
+                json_data = response.json()
 
                 response_data = {
                     "success": {
-                        "data": response.json(),
-                        "headers": dict(response.headers),
+                        "text": json.dumps(json_data),
+                        "data": json_data,
+                        "headers": [[key, value] for key, value in response.headers.items()],
                         "status": response.status_code
                     }
                 }
 
                 # Converte o dicionário em uma string JSON
-                jsonString = json.dumps(response_data)
+                json_string = json.dumps(response_data)
 
                 # Converte a string JSON para bytes usando UTF-8
-                json_bytes = jsonString.encode('utf-8')
+                json_bytes = json_string.encode('utf-8')
 
                 # Converte os bytes para uma representação hexadecimal
                 hex_payload = '0x' + json_bytes.hex()
 
-                requests.post(f"{rollups_url}/report", json={"body": hex_payload},
+                await self.client.post(f"{rollups_url}/report", json={"payload": hex_payload},
                               headers={"Content-Type": "application/json"})
 
                 return "accept"
@@ -140,7 +159,7 @@ class CartesifyBackend:
             error_json = json.dumps({"error": {"message": error_message}})
             buffer = bytes(error_json, "utf8")
             hex_payload = "0x" + buffer.hex()
-            requests.post(f"{rollups_url}/report", json={"body": hex_payload},
+            await self.client.post(f"{rollups_url}/report", json={"payload": hex_payload},
                           headers={"Content-Type": "application/json"})
 
             return "reject"

@@ -1,5 +1,6 @@
 import requests
 import logging
+import httpx
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,12 +22,12 @@ class App:
 
     async def handle_advance(self, data):
         print("handle_advance", data)
-        result = self.advance_handlers[0](data, self.options.url)
+        result = await self.advance_handlers[0](data, self.options.url)
         return result
 
     async def handle_inspect(self, data):
         print("handle_inspect", data)
-        return self.inspect_handlers[0](data, self.options.url)
+        return await self.inspect_handlers[0](data, self.options.url)
 
     def add_advance_handler(self, handler):
         self.advance_handlers.append(handler)
@@ -37,10 +38,11 @@ class App:
     async def start(self):
         logger.info("App initiating")
         status = "accept"
+        client = httpx.AsyncClient(timeout=10)
         while True:
             try:
 
-                response = requests.post(
+                response = await client.post(
                       f"{self.options.url}/finish",
                        json={"status": status},
                        headers={"Content-Type": "application/json"}
