@@ -21,12 +21,10 @@ class App:
         self.inspect_handlers = []
 
     async def handle_advance(self, data):
-        print("handle_advance", data)
         result = await self.advance_handlers[0](data, self.options.url)
         return result
 
     async def handle_inspect(self, data):
-        print("handle_inspect", data)
         return await self.inspect_handlers[0](data, self.options.url)
 
     def add_advance_handler(self, handler):
@@ -58,7 +56,6 @@ class App:
                         await self.handle_inspect(data['data'])
 
                 elif response.status_code == 202:
-                    print("No rollup request available")
+                    logger.info("No rollup request available")
             except Exception as e:
-                logger.info(f'Erro ao iniciar cartesify {e}')
-                print(e)
+                logger.error(f'Error starting cartesify {e}')

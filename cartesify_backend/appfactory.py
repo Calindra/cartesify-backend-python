@@ -36,19 +36,18 @@ class AppFactory:
 
         if options.url != "":
             logger.info(f"Connecting to {options.url}")
-            print(f"Connecting to {options.url}")
             return App(AppOptions(options.url, options.broadcast_advance_requests))
 
         ROLLUP_HTTP_SERVER_URL = os.getenv('ROLLUP_HTTP_SERVER_URL', '')
 
         if ROLLUP_HTTP_SERVER_URL != "":
-            logger.info(f"Connections to Rollup HTTP Server: {ROLLUP_HTTP_SERVER_URL.geturl()}")
+            logger.info(f"Connecting to Rollup HTTP Server: {ROLLUP_HTTP_SERVER_URL}")
             return App(AppOptions(ROLLUP_HTTP_SERVER_URL, options.broadcast_advance_requests))
 
         if (self.is_port_open(NONODO_HTTP_SERVER_URL.port)):
-            logger.info(f"Connections to Nonodo: {NONODO_HTTP_SERVER_URL.geturl()}")
+            logger.info(f"Connecting to Nonodo: {NONODO_HTTP_SERVER_URL.geturl()}")
             return App(AppOptions(NONODO_HTTP_SERVER_URL.geturl(), options.broadcast_advance_requests))
 
         if (self.is_port_open(DEFAULT_ROLLUP_HTTP_SERVER_URL.port)):
-            logger.info(f"Connections to Default Rollup HTTP_SERVER: {DEFAULT_ROLLUP_HTTP_SERVER_URL.geturl()}")
+            logger.info(f"Connecting to Default Rollup HTTP_SERVER: {DEFAULT_ROLLUP_HTTP_SERVER_URL.geturl()}")
             return App(AppOptions(DEFAULT_ROLLUP_HTTP_SERVER_URL.geturl(), options.broadcast_advance_requests))
