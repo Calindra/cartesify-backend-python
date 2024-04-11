@@ -4,7 +4,7 @@ with open('README.md', 'r') as arq:
     readme = arq.read()
 
 setup(name='cartesify_backend',
-    version='0.0.10',
+    version='1.0.1',
     license='MIT License',
     author='Diego Guimaraes',
     long_description=readme,
@@ -13,4 +13,4 @@ setup(name='cartesify_backend',
     keywords='cartesify',
     description=u'Cartesify Backend',
     packages=['cartesify_backend'],
-    install_requires=['requests', 'python-cartesi'],)
+    install_requires=['requests', 'httpx'], )
