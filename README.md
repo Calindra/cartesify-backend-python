@@ -13,7 +13,6 @@ app = Quart(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Definindo um logger para a aplicação Flask
 logger = logging.getLogger(__name__)
 
 port = 8383
