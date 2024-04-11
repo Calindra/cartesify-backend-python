@@ -21,8 +21,7 @@ games = []
 
 @app.route('/health', methods=['GET'])
 async def your_endpoint():
-    logger.info("Requisição recebida no endpoint your-endpoint")
-    print("Requisição recebida no endpoint your-endpoint")
+    logger.info("Request received on health")
     sender_address = request.headers.get('x-msg_sender')
     response_data = {'games': str(games)}
     logger.info(f'response is {response_data}')
@@ -30,8 +29,7 @@ async def your_endpoint():
 
 @app.route('/new-game', methods=['POST'])
 async def new_game():
-    logger.info("Requisição recebida no endpoint new_game")
-    print("Requisição recebida no endpoint new-game")
+    logger.info("Request received on new_game")
     sender_address = request.headers.get('x-msg_sender')
     commit = json.loads(await request.get_json())
     print(f"type of commit {type(commit)}")
